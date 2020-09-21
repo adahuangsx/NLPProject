@@ -43,13 +43,12 @@ public class Main {
 					cc = String.valueOf(c);
 					if (!count.containsKey(cc)) {
 						count.put(cc, 1);
-						totalCount++; // only count the de-duplicate.
 					}
 					else {
 						count.put(cc, count.get(cc) + 1);
 					}
 				}
-				 // unigram doesn't consider non-letter chars, like spaces or commas.
+				totalCount++;
 			}
 			count.put(terminal, count.get(terminal) + 1); // add a '$' to the end of this sentence.
 		}
@@ -101,7 +100,7 @@ public class Main {
 			lm.putAll(tri);
 			this.sizeOfTriword = totalCount;
 		}
-		System.out.println("File " + fileName + "\'s 2, 3-gram model is ready.");
+		System.out.println("File " + fileName + "\'s " + n + "-gram model is ready.");
 		reader.close();
 	}
 	
@@ -109,6 +108,8 @@ public class Main {
 		BufferedReader reader = new BufferedReader(new FileReader(fileName));
 		String line = null;
 		StringBuilder sb = null;
+		List<Double> prob_uni = new ArrayList<>();
+		List<Double> perp_uni = new ArrayList<>();
 		List<Double> prob_bi = new ArrayList<>();
 		List<Double> perp_bi = new ArrayList<>();
 		List<Double> prob_tri = new ArrayList<>();
@@ -135,12 +136,17 @@ public class Main {
 			List<Double> likelihood_tri = calculateLineProbwithTrigramModel(new StringBuilder(sb));
 			double crtProb_tri = meanProbability(likelihood_tri);
 			double crtPerp_tri = meanPerplexity(likelihood_tri);
+			prob_uni.add(crtProb_uni);
+			perp_uni.add(crtPerp_uni);
 			prob_bi.add(crtProb_bi);
 			perp_bi.add(crtPerp_bi);
 			prob_tri.add(crtProb_tri);
 			perp_tri.add(crtPerp_tri);
 		}
 		System.out.println("Test score:");
+		System.out.println("Unigram: ");
+		System.out.println("average probability of sentences: " + meanProbability(prob_uni));
+		System.out.println("average perplexity of sentences: " + meanProbability(perp_uni));
 		System.out.println("Bigram: ");
 		System.out.println("average probability of sentences: " + meanProbability(prob_bi));
 		System.out.println("average perplexity of sentences: " + meanProbability(perp_bi));
@@ -196,7 +202,15 @@ public class Main {
 	}
 	public List<Double> calculateLineProbwithUnigramModel(StringBuilder sb) {
 		List<Double> likelihood = new ArrayList<>();
-		
+		for (char c : sb.toString().toCharArray()) {
+			String uni = String.valueOf(c);
+			if (lm.get(uni) == null) {
+				likelihood.add(0.0);
+			} else {
+				likelihood.add(1.0 * lm.get(uni) / sizeOfUniword);
+			}
+		}
+		return likelihood;
 	}
 	
 	public double calculateScoreWithTrigramModel(Map<String, Integer> bigram, Map<String, Integer> trigram, String fileName) throws IOException {
