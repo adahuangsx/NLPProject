@@ -196,6 +196,7 @@ public class Main {
 	}
 	public List<Double> calculateLineProbwithUnigramModel(StringBuilder sb) {
 		List<Double> likelihood = new ArrayList<>();
+		
 	}
 	
 	public double calculateScoreWithTrigramModel(Map<String, Integer> bigram, Map<String, Integer> trigram, String fileName) throws IOException {
