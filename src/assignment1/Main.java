@@ -112,7 +112,7 @@ public class Main {
 		buildMultigramModel(fileName, 3);
 	}
 	
-	public void calculateScore(String fileName, double addk, int[] lambdas) throws IOException {
+	public void calculateScore(String fileName, double addk, double[] lambdas_bi, double[] lambdas_tri) throws IOException {
 		BufferedReader reader = new BufferedReader(new FileReader(fileName));
 		String line = null;
 		StringBuilder sb = null;
@@ -138,10 +138,10 @@ public class Main {
 			List<Double> likelihood_uni = calculateLineProbwithUnigramModel(new StringBuilder(sb));
 			double crtProb_uni = meanProbability(likelihood_uni);
 			double crtPerp_uni = meanPerplexity(likelihood_uni);
-			List<Double> likelihood_bi = calculateLineProbwithBigramModel(new StringBuilder(sb), addk);
+			List<Double> likelihood_bi = calculateLineProbwithBigramModel(new StringBuilder(sb), addk, lambdas_bi);
 			double crtProb_bi = meanProbability(likelihood_bi);
 			double crtPerp_bi = meanPerplexity(likelihood_bi);
-			List<Double> likelihood_tri = calculateLineProbwithTrigramModel(new StringBuilder(sb), addk);
+			List<Double> likelihood_tri = calculateLineProbwithTrigramModel(new StringBuilder(sb), addk, lambdas_tri);
 			double crtProb_tri = meanProbability(likelihood_tri);
 			double crtPerp_tri = meanPerplexity(likelihood_tri);
 //			System.out.print(crtPerp_tri + " ");
@@ -196,41 +196,53 @@ public class Main {
 		}
 		return likelihood;
 	}
-	public List<Double> calculateLineProbwithBigramModel(StringBuilder sb, double addk) {
+	public List<Double> calculateLineProbwithBigramModel(StringBuilder sb, double addk, double[] lambdas_bi) {
 		List<Double> likelihood = new ArrayList<>();
+		double[] lambdas = lambdas_bi == null ? new double[] {1.0, 0.0} : lambdas_bi;
 		likelihood.add(1.0 * (lm.get(sb.substring(0, 1)) + addk) / (sizeOfUniword) + addk * this.V);
 		while (sb.length() > 2) {
 			String bi = sb.substring(0, 2);
 			String uni = bi.substring(0, 1);
+			String wn = bi.substring(1, 2); // used in linear interpolation
 			int countBi = lm.get(bi) == null ? 0 : lm.get(bi);
 			int countUni = lm.get(uni) == null ? 0 : lm.get(uni);
+			int countwn = lm.get(wn) == null ? 0 : lm.get(wn);
 			if (addk == 0 && (countUni == 0 || countBi == 0)) {
 				likelihood.add(Double.MIN_VALUE);
 			} else {
-				likelihood.add(1.0 * (countBi + addk) / (countUni + addk * this.V));				
+				likelihood.add(lambdas[0] * (countBi + addk) / (countUni + addk * this.V) + 
+							   lambdas[1] * countwn / this.sizeOfBiword);				
 			}
 			sb.deleteCharAt(0);
 		}
 		return likelihood;
 	}
-	public List<Double> calculateLineProbwithTrigramModel(StringBuilder sb, double addk) {
+	public List<Double> calculateLineProbwithTrigramModel(StringBuilder sb, double addk, double[] lambdas_tri) {
 		List<Double> likelihood = new ArrayList<>();
+		double[] lambdas = lambdas_tri == null ? new double[] {1.0, 0.0, 0.0} : lambdas_tri;
 		String firstBi = sb.substring(0, 2);
 		String firstUni = firstBi.substring(0, 1);
 		if (lm.get(firstBi) != null && lm.get(firstUni) != null) {
 			likelihood.add(1.0 * lm.get(firstUni) / sizeOfUniword);
 			likelihood.add(1.0 * (lm.get(firstBi) + addk) / (lm.get(firstUni) + addk * this.V));
 		}
-		while (sb.length() > 3) {
-			String tri = sb.substring(0, 3);
-			String bi = tri.substring(0, 2);
+		while (sb.length() > 3) {  				// say, sb is "hello, ..."
+			String tri = sb.substring(0, 3); 	// tri: "hel"
+			String bi = tri.substring(0, 2); 	// bi:  "he"
+			String wn = tri.substring(0, 1); 	// wn:  "l"
+			String wn_1 = tri.substring(1, 2); 	// wn-1: "e"
+			String wn_1_2 = tri.substring(1, 3); // wn-1, wn-2: "el"
 			int countBi = lm.get(bi) == null ? 0 : lm.get(bi);
 			int countTri = lm.get(tri) == null ? 0 : lm.get(tri);
-			if (addk == 0 && (countBi == 0 || countTri == 0)) {
+			int countWn = lm.get(wn) == null ? 0 : lm.get(wn);
+			int countWn_1 = lm.get(wn_1) == null ? 0 : lm.get(wn_1);
+			int countWn_1_2 = lm.get(wn_1_2) == null ? 0 : lm.get(wn_1_2);
+			if (addk == 0 && (countBi == 0 || countTri == 0 || countWn_1 == 0)) {
 				likelihood.add(Double.MIN_VALUE);
 			} else {
-				if (1.0 * (countTri + addk) / (countBi + addk * this.V) == 0.0) {System.out.println("=====");}
-				likelihood.add(1.0 * (countTri + addk) / (countBi + addk * this.V));
+				likelihood.add(lambdas[0] * (countTri + addk) / (countBi + addk * this.V) +
+							   lambdas[1] * (countWn_1_2 + addk) / (countWn_1 + addk * this.V) +
+							   lambdas[2] * countWn / this.sizeOfUniword);
 			}
 			sb.deleteCharAt(0);
 		}
@@ -262,18 +274,26 @@ public class Main {
 //		t.checkValid("AB");
 		
 		t.training(enTrainingDir);
-		t.calculateScore(testDir, 0, null);
-		t.training(esTrainingDir);
-		t.calculateScore(testDir, 0, null);
-		t.training(deTrainingDir);
-		t.calculateScore(testDir, 0, null);
-		double k = 1;
+		t.calculateScore(testDir, 0, null, null);
+//		t.training(esTrainingDir);
+//		t.calculateScore(testDir, 0, null, null);
+//		t.training(deTrainingDir);
+//		t.calculateScore(testDir, 0, null, null);
+		double k = 0.7;
 		t.training(enTrainingDir);
-		t.calculateScore(testDir, k, null);
-		t.training(esTrainingDir);
-		t.calculateScore(testDir, k, null);
-		t.training(deTrainingDir);
-		t.calculateScore(testDir, k, null);
+		t.calculateScore(testDir, k, null, null);
+//		t.training(esTrainingDir);
+//		t.calculateScore(testDir, k, null, null);
+//		t.training(deTrainingDir);
+//		t.calculateScore(testDir, k, null, null);
+//		double[] lambdas_tri = new double[] {1.0 / 3, 1.0 / 3, 1.0 / 3};
+//		double[] lambdas_bi = new double[] {1.0 / 2, 1.0 / 2};
+//		t.training(enTrainingDir);
+//		t.calculateScore(testDir, 0, lambdas_bi, lambdas_tri);
+//		t.training(esTrainingDir);
+//		t.calculateScore(testDir, 0, lambdas_bi, lambdas_tri);
+//		t.training(deTrainingDir);
+//		t.calculateScore(testDir, 0, lambdas_bi, lambdas_tri);
 	}
 
 }
