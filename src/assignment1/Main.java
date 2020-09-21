@@ -14,8 +14,8 @@ public class Main {
 	public Map<String, Integer> uni;
 	public Map<String, Integer> bi;
 	public Map<String, Integer> tri;
-	public int sizeOfUniword;
-	public int sizeOfBiword;
+	public int sizeOfUniword; // uniword size is the total count of characters
+	public int sizeOfBiword;  // multigram size is the count of map entry
 	public int sizeOfTriword;
 	
 	String terminal = String.valueOf('$');
@@ -68,7 +68,7 @@ public class Main {
 		int totalCount = 0;
 		while ((line = reader.readLine()) != null) {
 			sb = new StringBuilder();
-			sb.append(terminal);
+//			sb.append(terminal);  // no "$" at the beginning
 			for (char c : line.toCharArray()) {
 				if (Character.isLetter(c) || c == ' ' || c == ',' || c == '.' || c == '\'') {
 					if (Character.isLowerCase(c)) {
@@ -78,7 +78,7 @@ public class Main {
 				}
 			}
 			sb.append(terminal);
-			// sb is established and preprocessed: "hello, this is a sentence."
+			// sb is established and preprocessed: "hello, this is a sentence.$"
 			
 			while (sb.length() >= n) { // n == 2 if it is a bigram model
 				String crt = sb.substring(0, n); // the first n characters
@@ -104,7 +104,14 @@ public class Main {
 		reader.close();
 	}
 	
-	public void calculateScore(String fileName) throws IOException {
+	public void training(String fileName) throws IOException {
+		lm = new HashMap<>();
+		buildUnigramModel(fileName);
+		buildMultigramModel(fileName, 2);
+		buildMultigramModel(fileName, 3);
+	}
+	
+	public void calculateScore(String fileName, double addk, int[] lambdas) throws IOException {
 		BufferedReader reader = new BufferedReader(new FileReader(fileName));
 		String line = null;
 		StringBuilder sb = null;
@@ -130,10 +137,10 @@ public class Main {
 			List<Double> likelihood_uni = calculateLineProbwithUnigramModel(new StringBuilder(sb));
 			double crtProb_uni = meanProbability(likelihood_uni);
 			double crtPerp_uni = meanPerplexity(likelihood_uni);
-			List<Double> likelihood_bi = calculateLineProbwithBigramModel(new StringBuilder(sb));
+			List<Double> likelihood_bi = calculateLineProbwithBigramModel(new StringBuilder(sb), addk);
 			double crtProb_bi = meanProbability(likelihood_bi);
 			double crtPerp_bi = meanPerplexity(likelihood_bi);
-			List<Double> likelihood_tri = calculateLineProbwithTrigramModel(new StringBuilder(sb));
+			List<Double> likelihood_tri = calculateLineProbwithTrigramModel(new StringBuilder(sb), addk);
 			double crtProb_tri = meanProbability(likelihood_tri);
 			double crtPerp_tri = meanPerplexity(likelihood_tri);
 			prob_uni.add(crtProb_uni);
@@ -144,18 +151,14 @@ public class Main {
 			perp_tri.add(crtPerp_tri);
 		}
 		System.out.println("Test score:");
-		System.out.println("Unigram: ");
-		System.out.println("average probability of sentences: " + meanProbability(prob_uni));
-		System.out.println("average perplexity of sentences: " + meanProbability(perp_uni));
-		System.out.println("Bigram: ");
-		System.out.println("average probability of sentences: " + meanProbability(prob_bi));
-		System.out.println("average perplexity of sentences: " + meanProbability(perp_bi));
-		System.out.println("Trigram: ");
-		System.out.println("average probability of sentences: " + meanProbability(prob_tri));
-		System.out.println("average perplexity of sentences: " + meanProbability(perp_tri));
+		System.out.println("(Unigram, add:" + addk + ") Prob.  Perp.");
+		System.out.println(meanProbability(prob_uni) + "  " + meanProbability(perp_uni));
+		System.out.println("(Bigram, add:" + addk + ") Prob.  Perp.");
+		System.out.println(meanProbability(prob_bi) + "  " + meanProbability(perp_bi));
+		System.out.println("(Trigram, add:" + addk + ") Prob.  Perp.");
+		System.out.println(meanProbability(prob_tri) + "  " + meanProbability(perp_tri));
 		reader.close();
 	}
-	
 	private double meanProbability(List<Double> llhd) {
 		double res = 0;
 		for (double prob : llhd) {
@@ -172,34 +175,6 @@ public class Main {
 		return Math.pow(res, -1.0 / llhd.size());
 	}
 	
-	public List<Double> calculateLineProbwithBigramModel(StringBuilder sb) {
-		List<Double> likelihood = new ArrayList<>();
-		while (sb.length() > 2) {
-			String bi = sb.substring(0, 2);
-			String uni = bi.substring(0, 1);
-			if (lm.get(uni) == null || lm.get(bi) == null) {
-				likelihood.add(0.0);
-			} else {
-				likelihood.add(1.0 * lm.get(bi) / lm.get(uni));				
-			}
-			sb.deleteCharAt(0);
-		}
-		return likelihood;
-	}
-	public List<Double> calculateLineProbwithTrigramModel(StringBuilder sb) {
-		List<Double> likelihood = new ArrayList<>();
-		while (sb.length() > 3) {
-			String tri = sb.substring(0, 3);
-			String bi = tri.substring(0, 2);
-			if (lm.get(bi) == null || lm.get(tri) == null) {
-				likelihood.add(0.0);
-			} else {
-				likelihood.add(1.0 * lm.get(tri) / lm.get(bi));
-			}
-			sb.deleteCharAt(0);
-		}
-		return likelihood;
-	}
 	public List<Double> calculateLineProbwithUnigramModel(StringBuilder sb) {
 		List<Double> likelihood = new ArrayList<>();
 		for (char c : sb.toString().toCharArray()) {
@@ -212,6 +187,46 @@ public class Main {
 		}
 		return likelihood;
 	}
+	public List<Double> calculateLineProbwithBigramModel(StringBuilder sb, double addk) {
+		List<Double> likelihood = new ArrayList<>();
+		likelihood.add(1.0 * (lm.get(sb.substring(0, 1)) + addk) / (sizeOfUniword) + addk * this.uni.size());
+		while (sb.length() > 2) {
+			String bi = sb.substring(0, 2);
+			String uni = bi.substring(0, 1);
+			int countBi = lm.get(bi) == null ? 0 : lm.get(bi);
+			int countUni = lm.get(uni) == null ? 0 : lm.get(uni);
+			if (addk == 0 && (countUni == 0 || countBi == 0)) {
+				likelihood.add(0.0);
+			} else {
+				likelihood.add(1.0 * (countBi + addk) / (countUni + addk * this.uni.size()));				
+			}
+			sb.deleteCharAt(0);
+		}
+		return likelihood;
+	}
+	public List<Double> calculateLineProbwithTrigramModel(StringBuilder sb, double addk) {
+		List<Double> likelihood = new ArrayList<>();
+		String firstBi = sb.substring(0, 2);
+		String firstUni = firstBi.substring(0, 1);
+		if (lm.get(firstBi) != null && lm.get(firstUni) != null) {
+			likelihood.add(1.0 * lm.get(firstUni) / sizeOfUniword);
+			likelihood.add(1.0 * (lm.get(firstBi) + addk) / (lm.get(firstUni) + addk * this.uni.size()));
+		}
+		while (sb.length() > 3) {
+			String tri = sb.substring(0, 3);
+			String bi = tri.substring(0, 2);
+			int countBi = lm.get(bi) == null ? 0 : lm.get(bi);
+			int countTri = lm.get(tri) == null ? 0 : lm.get(tri);
+			if (addk == 0 && (countBi == 0 || countTri == 0)) {
+				likelihood.add(0.0);
+			} else {
+				likelihood.add(1.0 * (countTri + addk) / (countBi + addk * this.bi.size()));
+			}
+			sb.deleteCharAt(0);
+		}
+		return likelihood;
+	}
+	
 	
 	public double calculateScoreWithTrigramModel(Map<String, Integer> bigram, Map<String, Integer> trigram, String fileName) throws IOException {
 		BufferedReader reader = new BufferedReader(new FileReader(fileName));
@@ -250,22 +265,24 @@ public class Main {
 		return logScore;
 	}
 	
-	public void training(String fileName) throws IOException {
-		lm = new HashMap<>();
-		buildUnigramModel(fileName);
-		buildMultigramModel(fileName, 2);
-		buildMultigramModel(fileName, 3);
-	}
+	
 	
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		Main t = new Main();
 		t.training(enTrainingDir);
-		t.calculateScore(testDir);
-		t.training(esTrainingDir);
-		t.calculateScore(testDir);
-		t.training(deTrainingDir);
-		t.calculateScore(testDir);
+		t.calculateScore(testDir, 0, null);
+//		t.training(esTrainingDir);
+//		t.calculateScore(testDir, 0, null);
+//		t.training(deTrainingDir);
+//		t.calculateScore(testDir, 0, null);
+		
+		t.training(enTrainingDir);
+		t.calculateScore(testDir, 1, null);
+//		t.training(esTrainingDir);
+//		t.calculateScore(testDir, 0, null);
+//		t.training(deTrainingDir);
+//		t.calculateScore(testDir, 0, null);
 	}
 
 }
