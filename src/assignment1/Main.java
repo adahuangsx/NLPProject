@@ -19,6 +19,7 @@ public class Main {
 	public int sizeOfTriword;
 	
 	String terminal = String.valueOf('$');
+	int V = 30; // in add-k, "+k/+kV"
 
 	public static String testDir = "data//test"; // address of test
 	public static String deTrainingDir = "data//training.de";
@@ -47,8 +48,8 @@ public class Main {
 					else {
 						count.put(cc, count.get(cc) + 1);
 					}
+					totalCount++;
 				}
-				totalCount++;
 			}
 			count.put(terminal, count.get(terminal) + 1); // add a '$' to the end of this sentence.
 		}
@@ -189,7 +190,7 @@ public class Main {
 	}
 	public List<Double> calculateLineProbwithBigramModel(StringBuilder sb, double addk) {
 		List<Double> likelihood = new ArrayList<>();
-		likelihood.add(1.0 * (lm.get(sb.substring(0, 1)) + addk) / (sizeOfUniword) + addk * this.uni.size());
+//		likelihood.add(1.0 * (lm.get(sb.substring(0, 1)) + addk) / (sizeOfUniword) + addk * this.V);
 		while (sb.length() > 2) {
 			String bi = sb.substring(0, 2);
 			String uni = bi.substring(0, 1);
@@ -198,7 +199,7 @@ public class Main {
 			if (addk == 0 && (countUni == 0 || countBi == 0)) {
 				likelihood.add(0.0);
 			} else {
-				likelihood.add(1.0 * (countBi + addk) / (countUni + addk * this.uni.size()));				
+				likelihood.add(1.0 * (countBi + addk) / (countUni + addk * this.V));				
 			}
 			sb.deleteCharAt(0);
 		}
@@ -210,7 +211,7 @@ public class Main {
 		String firstUni = firstBi.substring(0, 1);
 		if (lm.get(firstBi) != null && lm.get(firstUni) != null) {
 			likelihood.add(1.0 * lm.get(firstUni) / sizeOfUniword);
-			likelihood.add(1.0 * (lm.get(firstBi) + addk) / (lm.get(firstUni) + addk * this.uni.size()));
+			likelihood.add(1.0 * (lm.get(firstBi) + addk) / (lm.get(firstUni) + addk * this.V));
 		}
 		while (sb.length() > 3) {
 			String tri = sb.substring(0, 3);
@@ -220,13 +221,29 @@ public class Main {
 			if (addk == 0 && (countBi == 0 || countTri == 0)) {
 				likelihood.add(0.0);
 			} else {
-				likelihood.add(1.0 * (countTri + addk) / (countBi + addk * this.bi.size()));
+				likelihood.add(1.0 * (countTri + addk) / (countBi + addk * this.V));
 			}
 			sb.deleteCharAt(0);
 		}
 		return likelihood;
 	}
-	
+	public void checkValid(String history) {
+		int historyCount = lm.get(history);
+		List<Integer> counts = new ArrayList<>();
+		int total = 0;
+		for (Map.Entry<String, Integer> entry : this.tri.entrySet()) {
+			if (entry.getKey().startsWith(history)) {
+				counts.add(entry.getValue());
+				System.out.print(entry.getKey() + " ");
+				total += entry.getValue();
+			}
+		}
+		double prob = 0;
+		for (int count : counts) {
+			prob += 1.0 * count / total;
+		}
+		System.out.println("The total prob. of prefix " + history + " is " + prob);
+	}
 	
 	public double calculateScoreWithTrigramModel(Map<String, Integer> bigram, Map<String, Integer> trigram, String fileName) throws IOException {
 		BufferedReader reader = new BufferedReader(new FileReader(fileName));
@@ -271,14 +288,17 @@ public class Main {
 		// TODO Auto-generated method stub
 		Main t = new Main();
 		t.training(enTrainingDir);
-		t.calculateScore(testDir, 0, null);
+		t.checkValid("AB");
+		
+//		t.training(enTrainingDir);
+//		t.calculateScore(testDir, 0, null);
 //		t.training(esTrainingDir);
 //		t.calculateScore(testDir, 0, null);
 //		t.training(deTrainingDir);
 //		t.calculateScore(testDir, 0, null);
-		
-		t.training(enTrainingDir);
-		t.calculateScore(testDir, 1, null);
+//		
+//		t.training(enTrainingDir);
+//		t.calculateScore(testDir, 1, null);
 //		t.training(esTrainingDir);
 //		t.calculateScore(testDir, 0, null);
 //		t.training(deTrainingDir);
