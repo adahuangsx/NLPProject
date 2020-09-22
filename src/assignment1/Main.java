@@ -105,7 +105,7 @@ public class Main {
 		reader.close();
 	}
 	
-	public void training(String fileName) throws IOException {
+	public void training(String fileName, double holdOut) throws IOException {
 		lm = new HashMap<>();
 		buildUnigramModel(fileName);
 		buildMultigramModel(fileName, 2);
@@ -264,36 +264,65 @@ public class Main {
 		System.out.println("The total prob. of prefix " + history + " is " + prob);
 	}
 	
+	public void generate (String start) {
+		// generate the second character
+		int maxCount = 0;
+		String selected = null;
+		for (Map.Entry<String, Integer> entry : this.bi.entrySet()) {
+			if (entry.getKey().startsWith(start) && entry.getValue() > maxCount) {
+				selected = entry.getKey();
+				maxCount = entry.getValue();
+			}
+		}
+		start = selected;
+		StringBuilder sb = new StringBuilder(start);
+		while (sb.charAt(0) != '$') {
+			System.out.print(sb.charAt(0));
+			sb.deleteCharAt(0);
+			maxCount = 0;
+			for (Map.Entry<String, Integer> entry : this.tri.entrySet()) {
+				if (entry.getKey().startsWith(sb.toString()) && entry.getValue() > maxCount) {
+					selected = entry.getKey();
+					maxCount = entry.getValue();
+				}
+			}
+			sb = new StringBuilder(selected);
+		}
+		
+	}
 	
 	
 	
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		Main t = new Main();
-//		t.training(enTrainingDir);
+		t.training(esTrainingDir, 0.7);
 //		t.checkValid("AB");
 		
-		t.training(enTrainingDir);
-		t.calculateScore(testDir, 0, null, null);
+//		t.training(enTrainingDir);
+//		t.calculateScore(testDir, 0, null, null);
 //		t.training(esTrainingDir);
 //		t.calculateScore(testDir, 0, null, null);
 //		t.training(deTrainingDir);
 //		t.calculateScore(testDir, 0, null, null);
-		double k = 0.7;
-		t.training(enTrainingDir);
-		t.calculateScore(testDir, k, null, null);
+//		double k = 0.7;
+//		t.training(enTrainingDir, 0.7);
+//		t.calculateScore(testDir, k, null, null);
 //		t.training(esTrainingDir);
 //		t.calculateScore(testDir, k, null, null);
 //		t.training(deTrainingDir);
 //		t.calculateScore(testDir, k, null, null);
 //		double[] lambdas_tri = new double[] {1.0 / 3, 1.0 / 3, 1.0 / 3};
 //		double[] lambdas_bi = new double[] {1.0 / 2, 1.0 / 2};
-//		t.training(enTrainingDir);
+//		double[] lambdas_tri = new double[] {0.5, 0.3, 0.2};
+//		double[] lambdas_bi = new double[] {0.7, 0.3};
+//		t.training(enTrainingDir, 0.7);
 //		t.calculateScore(testDir, 0, lambdas_bi, lambdas_tri);
 //		t.training(esTrainingDir);
 //		t.calculateScore(testDir, 0, lambdas_bi, lambdas_tri);
 //		t.training(deTrainingDir);
 //		t.calculateScore(testDir, 0, lambdas_bi, lambdas_tri);
+		t.generate("A");
 	}
 
 }
