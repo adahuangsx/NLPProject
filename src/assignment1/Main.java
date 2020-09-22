@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public class Main {
 	
@@ -17,6 +18,8 @@ public class Main {
 	public int sizeOfUniword; // uniword size is the total count of characters
 	public int sizeOfBiword;  // multigram size is the count of map entry
 	public int sizeOfTriword;
+//	public List<String> biList; // used in random generating
+//	public List<String> triList;
 	
 	String terminal = String.valueOf('$');
 	int V = 30; // in add-k, "+k/+kV"
@@ -268,27 +271,37 @@ public class Main {
 		// generate the second character
 		int maxCount = 0;
 		String selected = null;
+		Random r = new Random();
+		List<String> biList = new ArrayList<>();
 		for (Map.Entry<String, Integer> entry : this.bi.entrySet()) {
-			if (entry.getKey().startsWith(start) && entry.getValue() > maxCount) {
-				selected = entry.getKey();
-				maxCount = entry.getValue();
-			}
-		}
-		start = selected;
-		StringBuilder sb = new StringBuilder(start);
-		while (sb.charAt(0) != '$') {
-			System.out.print(sb.charAt(0));
-			sb.deleteCharAt(0);
-			maxCount = 0;
-			for (Map.Entry<String, Integer> entry : this.tri.entrySet()) {
-				if (entry.getKey().startsWith(sb.toString()) && entry.getValue() > maxCount) {
-					selected = entry.getKey();
-					maxCount = entry.getValue();
+			if (entry.getKey().startsWith(start)) {
+				for (int i = 0; i < entry.getValue(); i++) {
+					biList.add(entry.getKey());
 				}
 			}
-			sb = new StringBuilder(selected);
 		}
-		
+		int maxLen = 200;
+		start = biList.get(r.nextInt(biList.size()));
+		StringBuilder sb = new StringBuilder(start);
+		List<String> triList = null;
+		while (sb.charAt(0) != '$' || maxLen > 0) {
+			System.out.print(sb.charAt(0));
+			sb.deleteCharAt(0);
+			triList = new ArrayList<>();
+			for (Map.Entry<String, Integer> entry : this.tri.entrySet()) {
+				if (entry.getKey().startsWith(sb.toString())) {
+					for (int i = 0; i < entry.getValue(); i++) {
+						triList.add(entry.getKey());
+					}
+				}
+			}
+			if (triList.size() > 0) {
+				sb = new StringBuilder(triList.get(r.nextInt(triList.size())));
+			}
+			
+			maxLen--;
+		}
+		System.out.println();
 	}
 	
 	
@@ -296,7 +309,7 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		Main t = new Main();
-		t.training(esTrainingDir, 0.7);
+		t.training(enTrainingDir, 0.7);
 //		t.checkValid("AB");
 		
 //		t.training(enTrainingDir);
@@ -322,7 +335,10 @@ public class Main {
 //		t.calculateScore(testDir, 0, lambdas_bi, lambdas_tri);
 //		t.training(deTrainingDir);
 //		t.calculateScore(testDir, 0, lambdas_bi, lambdas_tri);
-		t.generate("A");
+		for (char c = 'A'; c <= 'Z'; c++) {
+			t.generate(String.valueOf(c));
+		}
+		
 	}
 
 }
