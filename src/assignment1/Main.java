@@ -202,7 +202,7 @@ public class Main {
 	public List<Double> calculateLineProbwithBigramModel(StringBuilder sb, double addk, double[] lambdas_bi) {
 		List<Double> likelihood = new ArrayList<>();
 		double[] lambdas = lambdas_bi == null ? new double[] {1.0, 0.0} : lambdas_bi;
-		likelihood.add(1.0 * (lm.get(sb.substring(0, 1)) + addk) / (sizeOfUniword) + addk * this.V);
+//		likelihood.add(1.0 * (lm.get(sb.substring(0, 1)) + addk) / (sizeOfUniword) + addk * this.V);
 		while (sb.length() > 2) {
 			String bi = sb.substring(0, 2);
 			String uni = bi.substring(0, 1);
@@ -267,10 +267,8 @@ public class Main {
 		System.out.println("The total prob. of prefix " + history + " is " + prob);
 	}
 	
-	public void generate (String start) {
+	public void generateWithTrigramModel (String start) {
 		// generate the second character
-		int maxCount = 0;
-		String selected = null;
 		Random r = new Random();
 		List<String> biList = new ArrayList<>();
 		for (Map.Entry<String, Integer> entry : this.bi.entrySet()) {
@@ -303,28 +301,61 @@ public class Main {
 		}
 		System.out.println();
 	}
-	
+	public void generateWithBigramModel (String start) {
+		// generate the second character
+		Random r = new Random();
+//		List<String> biList = new ArrayList<>();
+//		for (Map.Entry<String, Integer> entry : this.bi.entrySet()) {
+//			if (entry.getKey().startsWith(start)) {
+//				for (int i = 0; i < entry.getValue(); i++) {
+//					biList.add(entry.getKey());
+//				}
+//			}
+//		}
+		int maxLen = 200;
+//		start = biList.get(r.nextInt(biList.size()));
+		StringBuilder sb = new StringBuilder(start);
+		List<String> biList = null;
+		while (sb.charAt(0) != '$' || maxLen > 0) {
+			System.out.print(sb.charAt(0));
+			sb.deleteCharAt(0);
+			biList = new ArrayList<>();
+			for (Map.Entry<String, Integer> entry : this.tri.entrySet()) {
+				if (entry.getKey().startsWith(sb.toString())) {
+					for (int i = 0; i < entry.getValue(); i++) {
+						biList.add(entry.getKey());
+					}
+				}
+			}
+			if (biList.size() > 0) {
+				sb = new StringBuilder(biList.get(r.nextInt(biList.size())));
+			}
+			
+			maxLen--;
+		}
+		System.out.println();
+	}
 	
 	
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		Main t = new Main();
-		t.training(enTrainingDir, 0.7);
+		t.training(esTrainingDir, 0.7);
 //		t.checkValid("AB");
 		
-//		t.training(enTrainingDir);
-//		t.calculateScore(testDir, 0, null, null);
-//		t.training(esTrainingDir);
-//		t.calculateScore(testDir, 0, null, null);
-//		t.training(deTrainingDir);
-//		t.calculateScore(testDir, 0, null, null);
-//		double k = 0.7;
-//		t.training(enTrainingDir, 0.7);
-//		t.calculateScore(testDir, k, null, null);
-//		t.training(esTrainingDir);
-//		t.calculateScore(testDir, k, null, null);
-//		t.training(deTrainingDir);
-//		t.calculateScore(testDir, k, null, null);
+		t.training(enTrainingDir, 0.7);
+		t.calculateScore(testDir, 0, null, null);
+		t.training(esTrainingDir, 0.7);
+		t.calculateScore(testDir, 0, null, null);
+		t.training(deTrainingDir, 0.7);
+		t.calculateScore(testDir, 0, null, null);
+		double k = 1;
+		t.training(enTrainingDir, 0.7);
+		t.calculateScore(testDir, k, null, null);
+		t.training(esTrainingDir, 0.7);
+		t.calculateScore(testDir, k, null, null);
+		t.training(deTrainingDir, 0.7);
+		t.calculateScore(testDir, k, null, null);
 //		double[] lambdas_tri = new double[] {1.0 / 3, 1.0 / 3, 1.0 / 3};
 //		double[] lambdas_bi = new double[] {1.0 / 2, 1.0 / 2};
 //		double[] lambdas_tri = new double[] {0.5, 0.3, 0.2};
@@ -335,8 +366,10 @@ public class Main {
 //		t.calculateScore(testDir, 0, lambdas_bi, lambdas_tri);
 //		t.training(deTrainingDir);
 //		t.calculateScore(testDir, 0, lambdas_bi, lambdas_tri);
+		
+		t.training(enTrainingDir, 0.7);
 		for (char c = 'A'; c <= 'Z'; c++) {
-			t.generate(String.valueOf(c));
+			t.generateWithBigramModel(String.valueOf(c));
 		}
 		
 	}
