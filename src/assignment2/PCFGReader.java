@@ -13,7 +13,11 @@ public class PCFGReader {
 	private static final String LEXICON_START = "Lexicon";
 	private static final String ARROW = "->";
 	private static final String MID_RULE_PREFIX = "@";
+	
 	private int ruleNum;
+	
+	List<Rule> grammars;
+	List<Rule> lexicons;
 	
 	public PCFGReader() {
 		ruleNum = 0;
@@ -50,6 +54,8 @@ public class PCFGReader {
 		grammarRules = transformAllBinary(grammarRules, lexiconRules);
 		reader.close();
 		printRules(grammarRules, lexiconRules);
+		this.grammars = new ArrayList<>(grammarRules);
+		this.lexicons = new ArrayList<>(lexiconRules);
 	}
 	
 	private void printRules (List<Rule> grammars, List<Rule> lexicons) {
@@ -176,11 +182,14 @@ public class PCFGReader {
 	
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
+		
+		// unit test
 		PCFGReader t = new PCFGReader();
 		List<Rule> grammars = t.parseGrammarRule("0.10 VP->Verb NP PP AP CP BP");
 		System.out.println(grammars);
 		List<Rule> lexicons = t.parseLexiconRule("0.60 Proper-Noun->Houston");
 		System.out.println(lexicons);
+		
 		t.readIn("data\\grammar.txt");
 	}
 
