@@ -47,8 +47,33 @@ public class PCFGReader {
 				}
 			}
 		}
+		transformAllBinary(grammarRules, lexiconRules);
+		reader.close();
 	}
 	
+	private void transformAllBinary(List<Rule> grammars, List<Rule> lexicons) {
+		for (int i = 0; i < grammars.size(); i++) {
+			// for each grammar rule
+			Rule crt = grammars.get(i);
+			if (crt.right != null) {
+				continue;
+			}
+			// if unary
+			for (int j = 0; j < grammars.size(); j++) {
+				// to find a matched rule
+				Rule theRule = grammars.get(j);
+				if (crt.left.equals(theRule.parent)) {
+					// matched
+					if (theRule.right != null) {
+						// find a binary matched rule
+						
+					}
+				}
+			}
+		}
+		
+	}
+
 	private List<Rule> parseGrammarRule(String line) {
 		List<Rule> grammar = new ArrayList<>();
 		line = line.replaceAll("\\s+", " ");
