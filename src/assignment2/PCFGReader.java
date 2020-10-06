@@ -47,11 +47,24 @@ public class PCFGReader {
 				}
 			}
 		}
-		transformAllBinary(grammarRules, lexiconRules);
+		grammarRules = transformAllBinary(grammarRules, lexiconRules);
 		reader.close();
+		printRules(grammarRules, lexiconRules);
 	}
 	
-	private void transformAllBinary(List<Rule> grammars, List<Rule> lexicons) {
+	private void printRules (List<Rule> grammars, List<Rule> lexicons) {
+		System.out.println("Grammars: ");
+		for (Rule each : grammars) {
+			System.out.println(each);
+		}
+		System.out.println("Lexicons: ");
+		for (Rule each : lexicons) {
+			System.out.println(each);
+		}
+	}
+	
+	private List<Rule> transformAllBinary(List<Rule> grammars, List<Rule> lexicons) {
+		
 		for (int i = 0; i < grammars.size(); i++) {
 			// for each grammar rule
 			Rule crt = grammars.get(i);
@@ -59,19 +72,51 @@ public class PCFGReader {
 				continue;
 			}
 			// if unary
+			boolean foundTheRule = false;
 			for (int j = 0; j < grammars.size(); j++) {
 				// to find a matched rule
 				Rule theRule = grammars.get(j);
 				if (crt.left.equals(theRule.parent)) {
 					// matched
+					foundTheRule = true;
 					if (theRule.right != null) {
 						// find a binary matched rule
-						
+						List<String> mids = new ArrayList<>(theRule.mids);
+						mids.add(theRule.parent);
+						grammars.add(new Rule(crt.parent, theRule.left, theRule.right, mids, crt.prob * theRule.prob));
+					}
+					else {
+						// not binary. so find a lexicon to connect [crt -- theRule -- theLex] chain
+						boolean hasLex = false;
+						for (Rule theLex : lexicons) {
+							if (theRule.left.equals(theLex.parent)) {
+								hasLex = true;
+								List<String> mids = new ArrayList<>();
+								mids.add(theRule.parent);
+								mids.add(theLex.parent);
+								grammars.add(new Rule(crt.parent, theLex.left, null, mids, crt.prob * theRule.prob * theLex.prob));
+							}
+						}
+						if (!hasLex) {
+							grammars.add(new Rule(crt.parent, theRule.left, null, theRule.parent, crt.prob * theRule.prob));
+						}
 					}
 				}
 			}
+			if (!foundTheRule) { // connect to a lex directly
+				for (Rule lex : lexicons) {
+					if (crt.left.equals(lex.parent)) {
+						foundTheRule = true;
+						grammars.add(new Rule(crt.parent, lex.left, null, lex.parent, crt.prob * lex.prob));
+					}
+				}
+			}
+			if (foundTheRule) {
+				// found a rule and successfully binarized it.
+				grammars.remove(i);
+			}
 		}
-		
+		return grammars;
 	}
 
 	private List<Rule> parseGrammarRule(String line) {
@@ -123,13 +168,14 @@ public class PCFGReader {
 		return lexicon;
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		PCFGReader t = new PCFGReader();
 		List<Rule> grammars = t.parseGrammarRule("0.10 VP->Verb NP PP AP CP BP");
 		System.out.println(grammars);
 		List<Rule> lexicons = t.parseLexiconRule("0.60 Proper-Noun->Houston");
 		System.out.println(lexicons);
+		t.readIn("data\\grammar.txt");
 	}
 
 }

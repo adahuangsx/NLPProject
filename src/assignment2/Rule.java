@@ -7,22 +7,27 @@ public class Rule {
 	String parent;
 	String left;
 	String right;
-	List<String> mids;
+	List<String> mids = new ArrayList<>();
 	double prob;
 	
 	public Rule(String p, String l, String r, double prob) {
 		parent = p;
 		left = l;
 		right = r;
-		mids = null;
+		this.prob = prob;
+	}
+	public Rule(String p, String l, String r, List<String> mids, double prob) {
+		parent = p;
+		left = l;
+		right = r;
+		this.mids.addAll(mids);
 		this.prob = prob;
 	}
 	public Rule(String p, String l, String r, String mid, double prob) {
 		parent = p;
 		left = l;
 		right = r;
-		mids = new ArrayList<>();
-		mids.add(mid);
+		this.mids.add(mid);
 		this.prob = prob;
 	}
 	
