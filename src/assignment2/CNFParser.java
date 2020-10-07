@@ -31,6 +31,10 @@ public class CNFParser {
 	 */
 	private boolean accepted = false;
 	
+	public boolean ifAccepted() {
+		return accepted;
+	}
+	
 	public CNFParser() {} // for test
 	
 	public CNFParser (String filePath, String sentence) throws IOException {
@@ -105,6 +109,10 @@ public class CNFParser {
 		}
 	}
 	
+	/**
+	 * If the top of the table has an "S", then accept the sentence
+	 * @return true if accepted the sentence
+	 */
 	private boolean checkAccepted() {
 		int num = this.words.length;
 		for (Cell finalCell : this.CKYTable.get(num - 1).get(0)) {
@@ -115,6 +123,12 @@ public class CNFParser {
 		return false;
 	}
 	
+	/**
+	 * Used when one-child lexicon or grammar rules form tree-strings with all the mids
+	 * @param rule
+	 * @param child
+	 * @return the constructed tree string
+	 */
 	private String getUnaryTree(Rule rule, String child) {
 		StringBuilder sb = new StringBuilder();
 		StringBuilder rightBraces = new StringBuilder("]");
