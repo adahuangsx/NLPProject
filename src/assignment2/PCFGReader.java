@@ -12,17 +12,24 @@ public class PCFGReader {
 	private static final String GRAMMAR_START = "Grammar";
 	private static final String LEXICON_START = "Lexicon";
 	private static final String ARROW = "->";
-	private static final String MID_RULE_PREFIX = "@";
+	static final String MID_RULE_PREFIX = "@";
 	
 	private int ruleNum;
 	
 	List<Rule> grammars;
 	List<Rule> lexicons;
 	
-	public PCFGReader() {
+	
+	public PCFGReader(String filePath) throws IOException {
 		ruleNum = 0;
+		this.readIn(filePath);
 	}
 	
+	/**
+	 * Read in the grammar file and store the grammar and lexicon rules.
+	 * @param grammar.txt filePath
+	 * @throws IOException when read in the file
+	 */
 	public void readIn(String filePath) throws IOException {
 		ruleNum = 0;
 		List<Rule> grammarRules = new ArrayList<>();
@@ -51,13 +58,18 @@ public class PCFGReader {
 				}
 			}
 		}
-		grammarRules = transformAllBinary(grammarRules, lexiconRules);
+		transformAllBinary(grammarRules, lexiconRules);
 		reader.close();
-		printRules(grammarRules, lexiconRules);
+//		printRules(grammarRules, lexiconRules); // for test
 		this.grammars = new ArrayList<>(grammarRules);
 		this.lexicons = new ArrayList<>(lexiconRules);
 	}
 	
+	/**
+	 * Print the read-in results to check if they are valid
+	 * @param grammars
+	 * @param lexicons
+	 */
 	private void printRules (List<Rule> grammars, List<Rule> lexicons) {
 		System.out.println("Grammars: ");
 		for (Rule each : grammars) {
@@ -69,7 +81,12 @@ public class PCFGReader {
 		}
 	}
 	
-	private List<Rule> transformAllBinary(List<Rule> grammars, List<Rule> lexicons) {
+	/**
+	 * Some grammars may be unary. This method is to find connectable lexicons.
+	 * @param grammars
+	 * @param lexicons
+	 */
+	private void transformAllBinary(List<Rule> grammars, List<Rule> lexicons) {
 		while (true) {
 			boolean settled = true;
 			for (int i = 0; i < grammars.size(); i++) {
@@ -130,7 +147,8 @@ public class PCFGReader {
 				break;
 			}
 		}
-		return grammars;
+//		return grammars;
+		// no need to return. the grammar and lexicon lists are passed by ref.
 	}
 
 	private List<Rule> parseGrammarRule(String line) {
@@ -186,13 +204,12 @@ public class PCFGReader {
 		// TODO Auto-generated method stub
 		
 		// unit test
-		PCFGReader t = new PCFGReader();
+		PCFGReader t = new PCFGReader("data\\grammar.txt");
 		List<Rule> grammars = t.parseGrammarRule("0.10 VP->Verb NP PP AP CP BP");
 		System.out.println(grammars);
 		List<Rule> lexicons = t.parseLexiconRule("0.60 Proper-Noun->Houston");
 		System.out.println(lexicons);
 		
-		t.readIn("data\\grammar.txt");
 	}
 
 }
