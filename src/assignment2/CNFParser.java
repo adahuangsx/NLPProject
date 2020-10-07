@@ -29,6 +29,7 @@ public class CNFParser {
 	 * ...
 	 * 
 	 */
+	private boolean accepted = false;
 	
 	public CNFParser() {} // for test
 	
@@ -44,8 +45,9 @@ public class CNFParser {
 			}
 		}
 		fillTableBottom();
-		
 		fillTableUpper();
+		this.accepted = checkAccepted();
+		
 	}
 	
 	/**
@@ -57,7 +59,7 @@ public class CNFParser {
 			String word = words[i];
 			for (Rule lex : this.readInRules.lexicons) {
 				if (word.equals(lex.left)) {
-					this.CKYTable.get(i).get(i).add(new Cell(lex.parent, getUnaryTree(lex), lex.prob));
+					this.CKYTable.get(i).get(i).add(new Cell(lex.parent, getUnaryTree(lex, lex.left), lex.prob));
 				}
 			}
 		}
@@ -84,41 +86,46 @@ public class CNFParser {
 							for (Rule gram : this.readInRules.grammars) {
 								if (one.symbol.equals(gram.left) && two.symbol.equals(gram.right)) {
 									// a grammar rule is matched
-									StringBuilder crtTree = new StringBuilder();
+									String crtTree = one.tree + two.tree;
 									if (gram.parent.startsWith(this.readInRules.MID_RULE_PREFIX)) {
 										// this grammar rule is a middle rule
-										crtTree.append(one.tree);
-										crtTree.append(two.tree);
+										// do nothing, just save the crtTree
 									}
 									else {
 										// this grammar rule is a normal one
-										
+										crtTree = getUnaryTree(gram, crtTree); // get all the mids
 									}
-									
-									
-									crts.add(new Cell (gram.parent, crtTree, .));
+									crts.add(new Cell (gram.parent, crtTree.toString(), gram.prob * one.prob * two.prob));
 								}
 							}
 						}
 					}
-					
 				}
 			}
 		}
 	}
 	
-	private String getUnaryTree(Rule lex) {
-		String word = lex.left;
+	private boolean checkAccepted() {
+		int num = this.words.length;
+		for (Cell finalCell : this.CKYTable.get(num - 1).get(0)) {
+			if (finalCell.symbol.equals("S")) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private String getUnaryTree(Rule rule, String child) {
 		StringBuilder sb = new StringBuilder();
 		StringBuilder rightBraces = new StringBuilder("]");
 		sb.append("[");
-		sb.append(lex.parent + " ");
-		for (String mid : lex.mids) {
+		sb.append(rule.parent + " ");
+		for (String mid : rule.mids) {
 			sb.append("[");
 			sb.append(mid + " ");
 			rightBraces.append("]");
 		}
-		sb.append(word);
+		sb.append(child);
 		sb.append(rightBraces);
 		return sb.toString();
 	}
@@ -131,7 +138,7 @@ public class CNFParser {
 		List<String> mids = new ArrayList<>();
 		mids.add("AP");
 		mids.add("BP");
-		System.out.println(t.getUnaryTree(new Rule ("S", "Iam", null, mids, 0.02)));
+		System.out.println(t.getUnaryTree(new Rule ("S", "Iam", null, mids, 0.02), "Iam"));
 	}
 
 }
