@@ -17,8 +17,21 @@ public class CNFParser {
 		}
 	}
 
+	class Bracket {
+		String symbol;
+		int leftInc;
+		int rightExc;
+		public Bracket(String sym, int i, int j) {
+			symbol = sym;
+			leftInc = i;
+			rightExc = j;
+		}
+	}
+	
 	PCFGReader readInRules;
 	String[] words;
+	private boolean accepted = false;
+	private double SentenceProb = 0;
 	private List<List<List<Cell>>> CKYTable;
 	/*
 	 * The table structure:
@@ -29,7 +42,6 @@ public class CNFParser {
 	 * ...
 	 * 
 	 */
-	private boolean accepted = false;
 	
 	public boolean ifAccepted() {
 		return accepted;
@@ -50,7 +62,7 @@ public class CNFParser {
 		}
 		fillTableBottom();
 		fillTableUpper();
-		this.accepted = checkAccepted();
+		setAcceptedAndProb();
 		
 	}
 	
@@ -91,7 +103,7 @@ public class CNFParser {
 								if (one.symbol.equals(gram.left) && two.symbol.equals(gram.right)) {
 									// a grammar rule is matched
 									String crtTree = one.tree + two.tree;
-									if (gram.parent.startsWith(this.readInRules.MID_RULE_PREFIX)) {
+									if (gram.parent.startsWith(PCFGReader.MID_RULE_PREFIX)) {
 										// this grammar rule is a middle rule
 										// do nothing, just save the crtTree
 									}
@@ -110,17 +122,20 @@ public class CNFParser {
 	}
 	
 	/**
-	 * If the top of the table has an "S", then accept the sentence
-	 * @return true if accepted the sentence
+	 * If the top of the table has an "S", then accept the sentence. And calculate the prob P(s) meanwhile.
 	 */
-	private boolean checkAccepted() {
+	private void setAcceptedAndProb() {
+		boolean accepted = false;
+		double prob = 0;
 		int num = this.words.length;
 		for (Cell finalCell : this.CKYTable.get(num - 1).get(0)) {
 			if (finalCell.symbol.equals("S")) {
-				return true;
+				prob += finalCell.prob;
+				accepted = true;
 			}
 		}
-		return false;
+		this.accepted = accepted;
+		this.SentenceProb = prob;
 	}
 	
 	/**
@@ -144,15 +159,72 @@ public class CNFParser {
 		return sb.toString();
 	}
 	
+	public List<Bracket> parseConstituency(String sentence, String sExpr) {
+		List<Bracket> bracs = new ArrayList<Bracket>();
+		int[] index = new int[1];
+		int[] wordIndex = new int[] {0};
+//		char[] exprArr = sExpr.toCharArray();
+		String[] words = sentence.split("\\s+");
+		parseConstituencyRecur(sExpr, words, index, wordIndex, bracs);
+		return bracs;
+	}
+	private void parseConstituencyRecur (String expr, String[] words, int[] ind, int[] wordInd, List<Bracket> bracs) {
+		System.out.println("THIS CALL --> Expr: " + expr.substring(ind[0]) 
+							+ "wordInd: " + wordInd[0]);
+		while (expr.charAt(ind[0]) == ' ') { // remove the leading spaces
+			ind[0]++;
+		}
+//		int crtWordInd = wordInd[0];
+		int crtInd = ind[0];
+		char crtChar = expr.charAt(crtInd);
+		if (crtChar == '[') {
+			ind[0] = crtInd + 1;
+			while (ind[0] < expr.length()) {
+				System.out.println(" ind[0]: " + ind[0]);
+				if (expr.charAt(ind[0]) != '[' && expr.charAt(ind[0]) != ']') {
+					ind[0]++;
+				}
+				else if (expr.charAt(ind[0]) == ']') { // base case
+					String word = expr.substring(crtInd + 1, ind[0]).trim().split("\\s+")[1];
+					wordInd[0]++;
+					if (!word.equals(words[wordInd[0]])) {
+						System.out.println("WRONG WORD INDEX --> Expr: " + expr + " word:" + word + "wordInd: " + wordInd[0]);
+					}
+					ind[0]++;
+					System.out.println("return.");
+					return; // do nothing but increment the global index and global word index.
+				}
+				else if (expr.charAt(ind[0]) == '[') {
+					String symbol = expr.substring(crtInd + 1, ind[0]).trim();
+					int startWordInd = wordInd[0];
+					parseConstituencyRecur(expr, words, ind, wordInd, bracs);
+//					j = ind[0]; // since ind[0] changed.
+					int endWordInd = wordInd[0];
+					bracs.add(new Bracket(symbol, startWordInd, endWordInd - 1));
+				}
+			}
+			
+		}
+	}
+	
+	public void test(int[] t) {
+		t[0]++;
+	}
+	
+	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 			
 		// unit test
 		CNFParser t = new CNFParser();
-		List<String> mids = new ArrayList<>();
-		mids.add("AP");
-		mids.add("BP");
-		System.out.println(t.getUnaryTree(new Rule ("S", "Iam", null, mids, 0.02), "Iam"));
+//		List<String> mids = new ArrayList<>();
+//		mids.add("AP");
+//		mids.add("BP");
+//		System.out.println(t.getUnaryTree(new Rule ("S", "Iam", null, mids, 0.02), "Iam"));
+		System.out.println(t.parseConstituency("the flight includes a meal", "[S[NP[Det the][Nominal[Noun flight]]][VP[Verb includes][NP[Det a][Nominal[Noun meal]]]]]"));
+//		int[] arr = new int[1];
+//		t.test(arr);
+//		System.out.println(arr[0]);
 	}
 
 }

@@ -1,7 +1,6 @@
 package assignment2;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -70,6 +69,7 @@ public class PCFGReader {
 	 * @param grammars
 	 * @param lexicons
 	 */
+	@SuppressWarnings("unused")
 	private void printRules (List<Rule> grammars, List<Rule> lexicons) {
 		System.out.println("Grammars: ");
 		for (Rule each : grammars) {
