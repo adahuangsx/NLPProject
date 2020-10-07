@@ -96,13 +96,14 @@ public class PCFGReader {
 						else {
 							// not binary. so find a lexicon to connect [crt -- theRule -- theLex] chain
 							boolean hasLex = false;
-							for (Rule theLex : lexicons) {
+							for (int k = 0; k < lexicons.size(); k++) {
+								Rule theLex = lexicons.get(k);
 								if (theRule.left.equals(theLex.parent)) {
 									hasLex = true;
 									List<String> mids = new ArrayList<>();
 									mids.add(theRule.parent);
 									mids.add(theLex.parent);
-									grammars.add(new Rule(crt.parent, theLex.left, null, mids, crt.prob * theRule.prob * theLex.prob));
+									lexicons.add(new Rule(crt.parent, theLex.left, null, mids, crt.prob * theRule.prob * theLex.prob));
 								}
 							}
 							if (!hasLex) {
@@ -112,10 +113,11 @@ public class PCFGReader {
 					}
 				}
 				if (!foundTheRule) { // connect to a lex directly
-					for (Rule lex : lexicons) {
+					for (int k = 0; k < lexicons.size(); k++) {
+						Rule lex = lexicons.get(k);
 						if (crt.left.equals(lex.parent)) {
 							foundTheRule = true;
-							grammars.add(new Rule(crt.parent, lex.left, null, lex.parent, crt.prob * lex.prob));
+							lexicons.add(new Rule(crt.parent, lex.left, null, lex.parent, crt.prob * lex.prob));
 						}
 					}
 				}
