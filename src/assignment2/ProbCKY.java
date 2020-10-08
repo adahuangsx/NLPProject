@@ -5,9 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import assignment2.CNFParser.Bracket;
 import assignment2.CNFParser.Cell;
-import hw2.PCKY;
 
 public class ProbCKY {
 	
@@ -58,7 +56,11 @@ public class ProbCKY {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		ProbCKY t = new ProbCKY("data//grammar.txt", "I book a flight to Houston", "[S [NP [Pronoun I]] [VP [Verb book] [NP [Det a] [Nominal [Noun flight]]] [PP [Preposition to] [NP [Proper-Noun houston]]]]]");
+		if (args.length < 3) {
+			System.out.print("Invalid inputs number!");
+			return;
+		}
+		ProbCKY t = new ProbCKY(args[0], args[1], args[2]);
 	    
 	}
 
