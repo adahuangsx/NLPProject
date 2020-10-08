@@ -200,16 +200,16 @@ public class PCFGReader {
 		return lexicon;
 	}
 	
-	public static void main(String[] args) throws IOException {
+//	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		
 		// unit test
-		PCFGReader t = new PCFGReader("data\\grammar.txt");
-		List<Rule> grammars = t.parseGrammarRule("0.10 VP->Verb NP PP AP CP BP");
-		System.out.println(grammars);
-		List<Rule> lexicons = t.parseLexiconRule("0.60 Proper-Noun->Houston");
-		System.out.println(lexicons);
+//		PCFGReader t = new PCFGReader("data\\grammar.txt");
+//		List<Rule> grammars = t.parseGrammarRule("0.10 VP->Verb NP PP AP CP BP");
+//		System.out.println(grammars);
+//		List<Rule> lexicons = t.parseLexiconRule("0.60 Proper-Noun->Houston");
+//		System.out.println(lexicons);
 		
-	}
+//	}
 
 }

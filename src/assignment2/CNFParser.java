@@ -220,17 +220,17 @@ public class CNFParser {
 	}
 	
 	
-	public static void main(String[] args) throws IOException {
+//	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 			
 		// unit test
-		CNFParser t = new CNFParser("data\\grammar.txt", "I book a flight to Houston");
-		System.out.println(t.getCandidates());
+//		CNFParser t = new CNFParser("data\\grammar.txt", "I book a flight to Houston");
+//		System.out.println(t.getCandidates());
 //		List<String> mids = new ArrayList<>();
 //		mids.add("AP");
 //		mids.add("BP");
 //		System.out.println(t.getUnaryTree(new Rule ("S", "Iam", null, mids, 0.02), "Iam"));
-		System.out.println(t.parseConstituency("the flight includes a meal", "[S[NP[Det the][Nominal[Noun flight]]][VP[Verb includes][NP[Det a][Nominal[Noun meal]]]]]"));
-	}
+//		System.out.println(t.parseConstituency("the flight includes a meal", "[S[NP[Det the][Nominal[Noun flight]]][VP[Verb includes][NP[Det a][Nominal[Noun meal]]]]]"));
+//	}
 
 }
