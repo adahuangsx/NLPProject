@@ -26,6 +26,10 @@ public class CNFParser {
 			leftInc = i;
 			rightExc = j;
 		}
+		
+		public String toString() {
+			return symbol + "-[" + leftInc + ", " + rightExc + ")";
+		}
 	}
 	
 	PCFGReader readInRules;
@@ -174,33 +178,46 @@ public class CNFParser {
 		while (expr.charAt(ind[0]) == ' ') { // remove the leading spaces
 			ind[0]++;
 		}
-//		int crtWordInd = wordInd[0];
+		int crtWordInd = wordInd[0];
 		int crtInd = ind[0];
 		char crtChar = expr.charAt(crtInd);
 		if (crtChar == '[') {
 			ind[0] = crtInd + 1;
 			while (ind[0] < expr.length()) {
-				System.out.println(" ind[0]: " + ind[0]);
+//				System.out.println(" ind[0]: " + ind[0]);
 				if (expr.charAt(ind[0]) != '[' && expr.charAt(ind[0]) != ']') {
 					ind[0]++;
 				}
-				else if (expr.charAt(ind[0]) == ']') { // base case
-					String word = expr.substring(crtInd + 1, ind[0]).trim().split("\\s+")[1];
-					wordInd[0]++;
-					if (!word.equals(words[wordInd[0]])) {
-						System.out.println("WRONG WORD INDEX --> Expr: " + expr + " word:" + word + "wordInd: " + wordInd[0]);
+				else if (expr.charAt(ind[0]) == ']') {
+					String inside = expr.substring(crtInd + 1, ind[0]);
+					System.out.println(inside);
+					int firstLeftBracePos = inside.indexOf('[');
+					if (-1 == firstLeftBracePos) { // base case
+						String word = inside.trim().split("\\s+")[1];
+						if (word.equals(words[wordInd[0]])) {
+							System.out.println(word + " MATCHED");
+							wordInd[0]++;
+						}
+						else { // for debug
+							System.out.println("WRONG WORD INDEX --> Expr: " + expr.substring(ind[0]) + " \nword:" + word + "wordInd: " + wordInd[0]);
+						}
+					}
+					else {
+						System.out.println("[" + (crtInd + 1) + ", " + (crtInd + firstLeftBracePos + 1) + ")");
+						String symbol = expr.substring(crtInd + 1, crtInd + firstLeftBracePos + 1).trim();
+						System.out.println(symbol);
+						bracs.add(new Bracket(symbol, crtWordInd, wordInd[0]));
 					}
 					ind[0]++;
-					System.out.println("return.");
 					return; // do nothing but increment the global index and global word index.
 				}
 				else if (expr.charAt(ind[0]) == '[') {
 					String symbol = expr.substring(crtInd + 1, ind[0]).trim();
-					int startWordInd = wordInd[0];
+//					int startWordInd = wordInd[0];
 					parseConstituencyRecur(expr, words, ind, wordInd, bracs);
 //					j = ind[0]; // since ind[0] changed.
-					int endWordInd = wordInd[0];
-					bracs.add(new Bracket(symbol, startWordInd, endWordInd - 1));
+//					int endWordInd = wordInd[0];
+//					bracs.add(new Bracket(symbol, startWordInd, endWordInd - 1));
 				}
 			}
 			
