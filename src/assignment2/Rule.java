@@ -3,11 +3,17 @@ package assignment2;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * To save binary grammar or lexicon rules.
+ * Lexicon rules have null right fields;
+ * @author Sixuan Huang
+ *
+ */
 public class Rule {
 	String parent;
 	String left;
 	String right;
-	List<String> mids = new ArrayList<>();
+	List<String> mids = new ArrayList<>(); // when connecting multiple unary rules.
 	double prob;
 	
 	public Rule(String p, String l, String r, double prob) {
