@@ -15,6 +15,10 @@ public class CNFParser {
 			this.tree = tree;
 			this.prob = prob;
 		}
+		@Override
+		public String toString() {
+			return "--" + symbol + " " + prob + " " + tree;
+		}
 	}
 
 	class Bracket {
@@ -27,6 +31,35 @@ public class CNFParser {
 			rightExc = j;
 		}
 		
+		@Override
+		public boolean equals(Object that) {
+			if (this == that) {
+				return true;
+			}
+			if (that == null) {
+				return false;
+			}
+			if (that instanceof Bracket) {
+				Bracket thatBrac = (Bracket) that;
+				if (this.symbol.equals(thatBrac.symbol) &&
+						this.leftInc == thatBrac.leftInc &&
+						this.rightExc == thatBrac.rightExc) {
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		@Override
+	    public int hashCode() {
+	        int result = 17;
+	        result = 31 * result + (symbol == null ? 0 : symbol.hashCode());
+	        result = 31 * result + leftInc * 13;
+	        result = 31 * result + rightExc * 19;
+	        return result;
+		}
+		
+		@Override
 		public String toString() {
 			return symbol + "-[" + leftInc + ", " + rightExc + ")";
 		}
@@ -35,7 +68,7 @@ public class CNFParser {
 	PCFGReader readInRules;
 	String[] words;
 	private boolean accepted = false;
-	private double SentenceProb = 0;
+	private double sentenceProb;
 	private List<List<List<Cell>>> CKYTable;
 	/*
 	 * The table structure:
@@ -50,12 +83,25 @@ public class CNFParser {
 	public boolean ifAccepted() {
 		return accepted;
 	}
+	public double getSentenceProb() {
+		return this.sentenceProb;
+	}
+	
+	public List<Cell> getCandidates() {
+		List<Cell> valids = new ArrayList<>();
+		for (Cell each : this.CKYTable.get(words.length - 1).get(0)) {
+			if (each.symbol.equals("S")) {
+				valids.add(each);
+			}
+		}
+		return valids;
+	}
 	
 	public CNFParser() {} // for test
 	
 	public CNFParser (String filePath, String sentence) throws IOException {
 		this.readInRules = new PCFGReader(filePath);
-		this.words = sentence.split("\\s+");
+		this.words = sentence.toLowerCase().split("\\s+");
 		int num = words.length;
 		this.CKYTable = new ArrayList<>();
 		for (int i = 0; i < num; i++) {
@@ -139,7 +185,7 @@ public class CNFParser {
 			}
 		}
 		this.accepted = accepted;
-		this.SentenceProb = prob;
+		sentenceProb = prob;
 	}
 	
 	/**
@@ -163,18 +209,21 @@ public class CNFParser {
 		return sb.toString();
 	}
 	
+	/**
+	 * Parse the S-expression into brackets (for calculating the precision and recall)
+	 * @param sentence	like "Nominal-[1, 2), NP-[0, 2), ..."
+	 * @param sExpr		like "[S [NP [Pronoun I]] [VP [Verb book] ..."
+	 * @return list of brackets
+	 */
 	public List<Bracket> parseConstituency(String sentence, String sExpr) {
 		List<Bracket> bracs = new ArrayList<Bracket>();
 		int[] index = new int[1];
 		int[] wordIndex = new int[] {0};
-//		char[] exprArr = sExpr.toCharArray();
-		String[] words = sentence.split("\\s+");
+		String[] words = sentence.toLowerCase().split("\\s+");
 		parseConstituencyRecur(sExpr, words, index, wordIndex, bracs);
 		return bracs;
 	}
 	private void parseConstituencyRecur (String expr, String[] words, int[] ind, int[] wordInd, List<Bracket> bracs) {
-		System.out.println("THIS CALL --> Expr: " + expr.substring(ind[0]) 
-							+ "wordInd: " + wordInd[0]);
 		while (expr.charAt(ind[0]) == ' ') { // remove the leading spaces
 			ind[0]++;
 		}
@@ -184,64 +233,48 @@ public class CNFParser {
 		if (crtChar == '[') {
 			ind[0] = crtInd + 1;
 			while (ind[0] < expr.length()) {
-//				System.out.println(" ind[0]: " + ind[0]);
 				if (expr.charAt(ind[0]) != '[' && expr.charAt(ind[0]) != ']') {
 					ind[0]++;
 				}
+				else if (expr.charAt(ind[0]) == '[') {
+					parseConstituencyRecur(expr, words, ind, wordInd, bracs);
+				}
 				else if (expr.charAt(ind[0]) == ']') {
 					String inside = expr.substring(crtInd + 1, ind[0]);
-					System.out.println(inside);
 					int firstLeftBracePos = inside.indexOf('[');
 					if (-1 == firstLeftBracePos) { // base case
 						String word = inside.trim().split("\\s+")[1];
-						if (word.equals(words[wordInd[0]])) {
-							System.out.println(word + " MATCHED");
+						if (word.toLowerCase().equals(words[wordInd[0]])) {
+							// word matched (not necessary check it, in fact)
 							wordInd[0]++;
 						}
 						else { // for debug
-							System.out.println("WRONG WORD INDEX --> Expr: " + expr.substring(ind[0]) + " \nword:" + word + "wordInd: " + wordInd[0]);
+							System.out.println("WRONG WORD INDEX: " + word + ", " + words[wordInd[0]]);
 						}
 					}
 					else {
-						System.out.println("[" + (crtInd + 1) + ", " + (crtInd + firstLeftBracePos + 1) + ")");
 						String symbol = expr.substring(crtInd + 1, crtInd + firstLeftBracePos + 1).trim();
-						System.out.println(symbol);
 						bracs.add(new Bracket(symbol, crtWordInd, wordInd[0]));
 					}
 					ind[0]++;
 					return; // do nothing but increment the global index and global word index.
 				}
-				else if (expr.charAt(ind[0]) == '[') {
-					String symbol = expr.substring(crtInd + 1, ind[0]).trim();
-//					int startWordInd = wordInd[0];
-					parseConstituencyRecur(expr, words, ind, wordInd, bracs);
-//					j = ind[0]; // since ind[0] changed.
-//					int endWordInd = wordInd[0];
-//					bracs.add(new Bracket(symbol, startWordInd, endWordInd - 1));
-				}
 			}
-			
 		}
 	}
 	
-	public void test(int[] t) {
-		t[0]++;
-	}
 	
-	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 			
 		// unit test
-		CNFParser t = new CNFParser();
+		CNFParser t = new CNFParser("data\\grammar.txt", "I book a flight to Houston");
+		System.out.println(t.getCandidates());
 //		List<String> mids = new ArrayList<>();
 //		mids.add("AP");
 //		mids.add("BP");
 //		System.out.println(t.getUnaryTree(new Rule ("S", "Iam", null, mids, 0.02), "Iam"));
 		System.out.println(t.parseConstituency("the flight includes a meal", "[S[NP[Det the][Nominal[Noun flight]]][VP[Verb includes][NP[Det a][Nominal[Noun meal]]]]]"));
-//		int[] arr = new int[1];
-//		t.test(arr);
-//		System.out.println(arr[0]);
 	}
 
 }
