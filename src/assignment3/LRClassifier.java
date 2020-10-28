@@ -29,7 +29,7 @@ public class LRClassifier {
 	 * 4: 1492
 	 * 5: 1230   (total vocab count: 7974)
 	 */
-	private static final int bias = 1; // means the intercept of LR model is not zero.
+	private static final int bias = 0; // means the intercept of LR model is not zero.
 	LogisticClassifier<Integer, Integer> classifier;
 	RVFDataset<Integer, Integer> trainSet;
 	RVFDataset<Integer, Integer> testSet;
@@ -37,24 +37,29 @@ public class LRClassifier {
 	
 	public LRClassifier (List<Comment> comments, double split, int fold) {
 		setVocab(comments);
-		dataset = new RVFDataset<>();
-		trainSet = new RVFDataset<>();
-		testSet = new RVFDataset<>();
-		Random r = new Random();
-		for (Comment comment : comments) {
-			int[] input = getCommentCount(comment);
-			RVFDatum<Integer, Integer> row = new RVFDatum<Integer, Integer>(transToCount(input), comment.isCons == true ? 1 : 0);
-			dataset.add(row);
-			if (r.nextInt(comments.size()) / (double)comments.size() < split) {
-				trainSet.add(row);
-			} else {
-				testSet.add(row);
+		double sumScore = 0.0;
+		for (int i = 0; i < fold; i++) {
+			dataset = new RVFDataset<>();
+			trainSet = new RVFDataset<>();
+			testSet = new RVFDataset<>();
+			Random r = new Random();
+			for (Comment comment : comments) {
+				int[] input = getCommentCount(comment);
+				RVFDatum<Integer, Integer> row = new RVFDatum<Integer, Integer>(transToCount(input), comment.isCons == true ? 1 : 0);
+				dataset.add(row);
+				if (r.nextInt(comments.size()) / (double)comments.size() < split) {
+					trainSet.add(row);
+				} else {
+					testSet.add(row);
+				}
 			}
+			train(dataset);
+			System.out.println("trained. Fold: " + i);
+			System.out.println(dataset.size() + " " + trainSet.size() + "/" + testSet.size());
+			sumScore += test(testSet);
 		}
-		train(dataset);
-		System.out.println("trained");
-		System.out.println(dataset.size() + " " + trainSet.size() + "/" + testSet.size());
-		test(testSet);
+		double testScore = sumScore / fold;
+		System.out.println(testScore);
 		
 	}
 	
@@ -70,10 +75,10 @@ public class LRClassifier {
 	}
 	
 	
-	private void test(RVFDataset<Integer, Integer> testSet) {
+	private double test(RVFDataset<Integer, Integer> testSet) {
 		if (classifier == null) {
 			System.out.println("ERROR. Train it before testing!");
-			return;
+			return 0;
 		}
 		int correctPredictNum = 0;
 		for (RVFDatum<Integer, Integer> test : testSet) {
@@ -82,7 +87,7 @@ public class LRClassifier {
 			if (ob == pre) { correctPredictNum++; }
 			
 		}
-		System.out.println(((double) correctPredictNum) / testSet.size());
+		return ((double) correctPredictNum) / testSet.size();
 	}
 	
 	/**
