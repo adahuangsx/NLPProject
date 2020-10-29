@@ -89,24 +89,24 @@ public class LRClassifier {
 		
 		double sumScore2 = 0.0;
 		for (int i = 0; i < fold; i++) {
-			Dataset<Integer, Double> dataset2 = new Dataset<>();
-			Dataset<Integer, Double> trainSet2 = new Dataset<>();
-			Dataset<Integer, Double> testSet2 = new Dataset<>();
+			RVFDataset<Integer, Integer> dataset2 = new RVFDataset<>();
+			RVFDataset<Integer, Integer> trainSet2 = new RVFDataset<>();
+			RVFDataset<Integer, Integer> testSet2 = new RVFDataset<>();
 			Random r = new Random();
 			for (Comment comment : comments) {
 				int[] input = getCommentCount(comment);
 				double[] tfidfInput = new double[input.length];
 				// tf
 				for (int j = 0; j < input.length; j++) {
-					double tf = ((double)input[j]) / comment.words.size();
-					double idf = idfMap.get(featureName[j]);
+					double tf = comment.words.size() == 0 ? 0 : ((double)input[j])/* / (comment.words.size())*/;
+					double idf = idfMap.getOrDefault(featureName[j], 0.0);
 					tfidfInput[j] = tf * idf; 
 //					tfidfInput[j] = (double)input[j];
-//					if (tf != 0) {
+//					if (Double.isNaN(tfidfInput[j])) {
 //						System.out.print("[" + tf + " " + idf + "]");
 //					}
 				}
-				Datum<Integer, Double> row = new RVFDatum<Integer, Double>(transToCounterDouble(tfidfInput), comment.isCons == true ? 1 : 0);
+				Datum<Integer, Integer> row = new RVFDatum<Integer, Integer>(transToCounterDouble(tfidfInput), comment.isCons == true ? 1 : 0);
 				dataset2.add(row);
 				if (r.nextInt(comments.size()) / (double)comments.size() < split) {
 					trainSet2.add(row);
@@ -115,11 +115,11 @@ public class LRClassifier {
 				}
 //				System.out.println(row.toString());
 			}
-			trainDouble(trainSet2);
+			train(trainSet2);
 			System.out.println("trained. " + norm + " Fold: " + i);
 			
 			System.out.println(dataset2.size() + " " + trainSet2.size() + "/" + testSet2.size());
-			sumScore2 += testDouble(testSet2);
+			sumScore2 += test(testSet2);
 		}
 		
 		double testScore2 = sumScore2 / fold;
@@ -139,10 +139,10 @@ public class LRClassifier {
 	 * Wrapper function of LogisticClassifierFactory in coreNLP.
 	 * @param dataset2
 	 */
-	public void trainDouble(Dataset<Integer, Double> dataset2) {
-		LogisticClassifierFactory<Integer, Double> factory = new LogisticClassifierFactory<>();
-		classifierDouble = factory.trainClassifier(dataset2);
-		System.out.println(classifierDouble);
+	public void trainDouble(Dataset<Integer, Integer> dataset2) {
+		LogisticClassifierFactory<Integer, Integer> factory = new LogisticClassifierFactory<>();
+		classifier = factory.trainClassifier(dataset2);
+		System.out.println(classifier);
 	}
 	
 	
@@ -206,13 +206,13 @@ public class LRClassifier {
 	 * @param input  [0, 1, 2, 5, 1, 2, 4, ...] means the word[3] appeared 5 times.
 	 * @return Counter type
 	 */
-	public static Counter<Double> transToCounterDouble(double input[]) {
+	public static Counter<Integer> transToCounterDouble(double input[]) {
 		// transfer the input array of a comment to the Counter object features
 		// features[i+1] is the number of occurrence of the ith word in the commend
-		Counter<Double> features = new ClassicCounter<>();
-		features.setCount((double)0, (double)bias);
+		Counter<Integer> features = new ClassicCounter<>();
+		features.setCount(0, bias);
 		for (int i = 0; i < input.length; i++)
-			features.setCount((double) (i + 1), input[i]);
+			features.setCount(i + 1, input[i]);
 		return features;
 	}
 	
