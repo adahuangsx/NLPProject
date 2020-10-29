@@ -100,8 +100,8 @@ public class LRClassifier {
 				for (int j = 0; j < input.length; j++) {
 					double tf = ((double)input[j]) / comment.words.size();
 					double idf = idfMap.get(featureName[j]);
-//					tfidfInput[j] = tf * idf; 
-					tfidfInput[j] = (double)input[j];
+					tfidfInput[j] = tf * idf; 
+//					tfidfInput[j] = (double)input[j];
 //					if (tf != 0) {
 //						System.out.print("[" + tf + " " + idf + "]");
 //					}
