@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import edu.stanford.nlp.classify.Dataset;
 import edu.stanford.nlp.classify.LogisticClassifier;
 import edu.stanford.nlp.classify.LogisticClassifierFactory;
 import edu.stanford.nlp.classify.RVFDataset;
@@ -29,7 +30,7 @@ public class LRClassifier {
 	 * 4: 1492
 	 * 5: 1230   (total vocab count: 7974)
 	 */
-	private static final int bias = 0; // means the intercept of LR model is not zero.
+	private static final int bias = 1; // means the intercept of LR model is not zero.
 	LogisticClassifier<Integer, Integer> classifier;
 	RVFDataset<Integer, Integer> trainSet;
 	RVFDataset<Integer, Integer> testSet;
@@ -45,49 +46,48 @@ public class LRClassifier {
 			Random r = new Random();
 			for (Comment comment : comments) {
 				int[] input = getCommentCount(comment);
-				RVFDatum<Integer, Integer> row = new RVFDatum<Integer, Integer>(transToCount(input), comment.isCons == true ? 1 : 0);
-				dataset.add(row);
+				RVFDatum<Integer, Integer> RVFrow = new RVFDatum<Integer, Integer>(transToCount(input), comment.isCons == true ? 1 : 0);
+				dataset.add(RVFrow);
 				if (r.nextInt(comments.size()) / (double)comments.size() < split) {
-					trainSet.add(row);
+					trainSet.add(RVFrow);
 				} else {
-					testSet.add(row);
+					testSet.add(RVFrow);
 				}
 			}
-			train(dataset);
+			train(trainSet);
 			System.out.println("trained. Fold: " + i);
 			System.out.println(dataset.size() + " " + trainSet.size() + "/" + testSet.size());
 			sumScore += test(testSet);
 		}
 		double testScore = sumScore / fold;
 		System.out.println(testScore);
-		
 	}
 	
 	
 
 	/**
 	 * Wrapper function of LogisticClassifierFactory in coreNLP.
-	 * @param trainSet
+	 * @param dataset2
 	 */
-	public void train(RVFDataset<Integer, Integer> trainSet) {
+	public void train(RVFDataset<Integer, Integer> dataset2) {
 		LogisticClassifierFactory<Integer, Integer> factory = new LogisticClassifierFactory<>();
-		classifier = factory.trainClassifier(trainSet);
+		classifier = factory.trainClassifier(dataset2);
 	}
 	
 	
-	private double test(RVFDataset<Integer, Integer> testSet) {
+	private double test(RVFDataset<Integer, Integer> testSet2) {
 		if (classifier == null) {
 			System.out.println("ERROR. Train it before testing!");
 			return 0;
 		}
 		int correctPredictNum = 0;
-		for (RVFDatum<Integer, Integer> test : testSet) {
+		for (RVFDatum<Integer, Integer> test : testSet2) {
 			int ob = test.label();
 			int pre = classifier.classOf(test.asFeaturesCounter());
 			if (ob == pre) { correctPredictNum++; }
 			
 		}
-		return ((double) correctPredictNum) / testSet.size();
+		return ((double) correctPredictNum) / testSet2.size();
 	}
 	
 	/**
@@ -150,7 +150,8 @@ public class LRClassifier {
 		// TODO Auto-generated method stub
 		CommentReader t = new CommentReader(CommentReader.csvFile);
 		LRClassifier cla = new LRClassifier(t.comments, 0.7, 5);
-	
+//		Dataset<Integer, Integer> set = cla.trainSet;
+//		set.getRandomSubDataset(0.7, 2020);
 	}
 
 }
