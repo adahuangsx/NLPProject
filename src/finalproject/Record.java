@@ -16,9 +16,9 @@ public class Record {
 	
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(storyID).append("\n");
+//		sb.append(storyID).append("\n");
 		sb.append(inputSentce).append("\n");
-		sb.append(rightEnd).append("||");
+		sb.append(rightEnd).append("  ");
 		sb.append(wrongEnd).append("\n");
 		return sb.toString();
 	}

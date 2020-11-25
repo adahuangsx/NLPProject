@@ -1,15 +1,18 @@
 package finalproject;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 
 public class BowConverter {
 
 
-	private Set<String> allWords = new HashSet<>();
+	private Map<String, Integer> allWords = new HashMap<>();
 	private StopWordRemover stopwordRemover = new StopWordRemover();
 	
 	/**
@@ -27,7 +30,7 @@ public class BowConverter {
 				index++; // start
 			}
 			StringBuilder sb = new StringBuilder();
-			while (index < text.length && (Character.isLetter(text[index]) || text[index] == '\'')) {
+			while (index < len && (Character.isLetter(text[index]) /* || text[index] == '\'' */)) {
 				sb.append(text[index++]);
 			}
 			if (sb.length() > 0) {
@@ -40,11 +43,39 @@ public class BowConverter {
 		return res;
 	}
 	
+	/**
+	 * Input all the records I have, convert them into a dictionary.
+	 * @param records
+	 */
+	public void inputAllwords(List<Record> records) {
+		allWords = new HashMap<>();
+		for (Record record : records) {
+			List<String> words = this.tokenizeAndRemoveStopwords(record.toString().toCharArray());
+			for (String word : words) {
+				if (!allWords.containsKey(word)) {
+					allWords.put(word, 1);
+				}else {
+					allWords.put(word, allWords.get(word) + 1);
+				}
+			}
+		}
+		// end
+	}
 	
 	
-	public static void main(String[] args) {
+	
+	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
-
+		StoryRecordReader rdr = new StoryRecordReader(StoryRecordReader.TRAIN_DATA);
+		BowConverter t = new BowConverter();
+		Record r = null;
+		List<Record> records = new ArrayList<>();
+		int i = 50;
+		while ((r = rdr.next()) != null && i > 0) {
+			records.add(r);
+		}
+		t.inputAllwords(records);
+		System.out.println(t.allWords);
 	}
 
 }
