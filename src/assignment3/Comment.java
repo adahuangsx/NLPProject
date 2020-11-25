@@ -19,6 +19,11 @@ public class Comment {
 	public void setCount(int[] c) {
 		counts = c;
 	}
+	
+	/**
+	 * Convert the comment words into a [word - count] map.
+	 * @return the count map
+	 */
 	public Map<String, Integer> toMap() {
 		// TODO Auto-generated method stub
 		if (wordMap != null) {

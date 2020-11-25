@@ -8,7 +8,7 @@ import java.util.Map;
 
 
 /**
- * This is from INFSCI-2140 assignment resources
+ * This is from INFSCI-2140 assignment (all the code was also my work)
  *
  */
 public class StopWordRemover {

@@ -5,6 +5,11 @@ import java.util.List;
 
 import com.csvreader.CsvReader;
 
+/**
+ * This class can read the csv file and extract the F and G columns into a list of Comments.
+ * Meanwhile, tokenize the words and remove the stopwords, and save the words into the Comment object.
+ * @author Sixuan Huang
+ */
 public class CommentReader {
 	
 
@@ -28,11 +33,16 @@ public class CommentReader {
 		}
 	}
 	
-	
+	/**
+	 * tokenize the words and remove the stopwords, and output the words.
+	 * @param text
+	 * @return token words
+	 */
 	private List<String> tokenizeAndRemoveStopwords(char[] text) {
 		List<String> res = new ArrayList<>();
 		int len = text.length;
 		int index = 0;
+		WordNormalizer normalizerObj = new WordNormalizer();
 		while (index < len) {
 			while (index < len && !Character.isLetter(text[index])) {
 				index++; // start
@@ -42,7 +52,7 @@ public class CommentReader {
 				sb.append(text[index++]);
 			}
 			if (sb.length() > 0) {
-				String word = sb.toString().toLowerCase();
+				String word = normalizerObj.stem(sb.toString().toLowerCase().toCharArray());
 				if (!stopwordRemover.isStopword(word)) {
 					res.add(word);
 				}

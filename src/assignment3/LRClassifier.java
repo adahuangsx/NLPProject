@@ -22,9 +22,18 @@ import edu.stanford.nlp.stats.ClassicCounter;
 import edu.stanford.nlp.stats.Counter;
 import edu.stanford.nlp.util.Pair;
 
+
+
+/**
+ * The logistic regression classifier
+ * This is a wrapper of the Stanford CoreNLP's LR classifier.
+ * 
+ * @author Sixuan Huang
+ *
+ */
 public class LRClassifier {
 	private String[] featureName;
-	private static final int bowMinCount = 2; // bag of words lowest count threshold
+	private static final int bowMinCount = -1; // bag of words lowest count threshold
 	/* when this threshold is set to <X>, the length of vocabList will be:
 	 * 1: 3742
 	 * 2: 2457
@@ -145,7 +154,11 @@ public class LRClassifier {
 		System.out.println(classifier);
 	}
 	
-	
+	/**
+	 * test the dataset with the current classifier
+	 * @param testSet
+	 * @return the accuracy
+	 */
 	private double test(RVFDataset<Integer, Integer> testSet2) {
 		if (classifier == null) {
 			System.out.println("ERROR. Train it before testing!");
@@ -161,29 +174,6 @@ public class LRClassifier {
 		return ((double) correctPredictNum) / testSet2.size();
 	}
 	
-	private double testDouble(Dataset<Integer, Double> testSet2) {
-		if (classifierDouble == null) {
-			System.out.println("ERROR. Train it before testing!");
-			return 0;
-		}
-		int correctPredictNum = 0;
-		for (RVFDatum<Integer, Double> test : testSet2) {
-			int ob = test.label();
-			int pre = classifierDouble.classOf(test.asFeaturesCounter());
-			if (ob == pre) { correctPredictNum++; }
-			
-		}
-		return ((double) correctPredictNum) / testSet2.size();
-	}
-	
-//	private Map<String, Double> getIDFMap(){
-//		Map<String, Double> map = new HashMap<>();
-//		if (classifier == null) {
-//			System.out.println("ERROR. Train it before testing!");
-//			return map;
-//		}
-//		
-//	}
 	
 	/**
 	 * Convert the count input array to Counter in coreNLP
@@ -203,7 +193,7 @@ public class LRClassifier {
 	/**
 	 * Convert the count input array to Counter in coreNLP
 	 * Counter is like a small map, with key being the index.
-	 * @param input  [0, 1, 2, 5, 1, 2, 4, ...] means the word[3] appeared 5 times.
+	 * @param input  [0.0, 1.0, 2.2, 5.3, ...] means the word[3]'s data is 5.3.
 	 * @return Counter type
 	 */
 	public static Counter<Integer> transToCounterDouble(double input[]) {
@@ -264,9 +254,11 @@ public class LRClassifier {
 		CommentReader t = new CommentReader(CommentReader.csvFile);
 //		LRClassifier cla = new LRClassifier(t.comments, 0.7, 5);
 		
-		LRClassifier cla2 = new LRClassifier(t.comments, 0.7, 2, "tf-idf");
+		LRClassifier cla2 = new LRClassifier(t.comments, 0.7, 5, "tf-idf");
+		System.out.println(cla2.featureName.length);
 //		Dataset<Integer, Integer> set = cla.trainSet;
 //		set.getRandomSubDataset(0.7, 2020);
+//		LRClassifier cla3 = new LRClassifier(t.comments, 0.7, 5, "word2vec");
 	}
 
 }
