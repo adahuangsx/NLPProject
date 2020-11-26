@@ -2,6 +2,9 @@ package finalproject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -13,6 +16,7 @@ public class BowConverter {
 
 
 	private Map<String, Integer> allWords = new HashMap<>();
+	private List<String> allWordsList = new ArrayList<>();
 	private StopWordRemover stopwordRemover = new StopWordRemover();
 	
 	/**
@@ -49,6 +53,7 @@ public class BowConverter {
 	 */
 	public void inputAllwords(List<Record> records) {
 		allWords = new HashMap<>();
+		allWordsList = new ArrayList<>();
 		for (Record record : records) {
 			List<String> words = this.tokenizeAndRemoveStopwords(record.toString().toCharArray());
 			for (String word : words) {
@@ -60,8 +65,24 @@ public class BowConverter {
 			}
 		}
 		// end
+		allWordsList.addAll(allWords.keySet());
+		Collections.sort(allWordsList);
 	}
 	
+	public int[] convertBOW(String sentce) {
+		if (this.allWords.size() == 0) {
+			System.out.println("BOW dict is not inited. ");
+			return null;
+		}
+		int[] dict = new int[this.allWords.size()];
+		List<String> words = this.tokenizeAndRemoveStopwords(sentce.toCharArray());
+		for (String word : words) {
+			
+			int i = this.allWordsList.indexOf(word);
+			dict[i]++;
+		}
+		return dict;
+	}
 	
 	
 	public static void main(String[] args) throws IOException {
@@ -75,7 +96,8 @@ public class BowConverter {
 			records.add(r);
 		}
 		t.inputAllwords(records);
-		System.out.println(t.allWords);
+		System.out.println(records.get(0));
+		System.out.println(Arrays.toString(t.convertBOW(records.get(0).toString())));
 	}
 
 }
